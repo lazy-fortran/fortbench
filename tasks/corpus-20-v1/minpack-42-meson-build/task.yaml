@@ -1,0 +1,37 @@
+id: minpack-42-meson-build
+title: "minpack: provide a working Meson build definition"
+repo_url: https://github.com/fortran-lang/minpack.git
+issue_url: https://github.com/fortran-lang/minpack/pull/42
+source_pr_url: https://github.com/fortran-lang/minpack/pull/42
+base_commit: 7734ed055a30e201ad1977785f7570bd0bc5d7f7
+fixed_commit: d5dbbaf2fe6a1e3704ca865a8583d51f13c94a20
+language: fortran
+difficulty: small
+selection_lane: minpack
+runner_class: macos-fast
+oracle_strategy: meson-configure
+build_budget_seconds: 15
+tags:
+  - minpack
+  - meson
+  - build-system
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - "true"
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  Minpack should be buildable as a Meson project. Before the change there was
+  no Meson build definition in the repository. The merged PR added the Meson
+  files needed to configure the project.
+
+  Expected behavior:
+  - `meson setup build` succeeds from the repository root
+  - the generated build directory contains a `build.ninja`
+acceptance_hint: |
+  The validator runs `meson setup build` in the checked-out repository and
+  checks for the generated `build.ninja`.
+
+  The base commit is expected to fail because no Meson build files exist.
+  The fixed commit is expected to configure successfully.

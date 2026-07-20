@@ -1,0 +1,40 @@
+id: stdlib-543-string-concat
+title: "stdlib: fix string_type concatenation order"
+repo_url: https://github.com/fortran-lang/stdlib.git
+issue_url: https://github.com/fortran-lang/stdlib/pull/543
+source_pr_url: https://github.com/fortran-lang/stdlib/pull/543
+base_commit: 65b74f81cb253c5f2511f235b22c70042d1bb184
+fixed_commit: 0bf8fd23df73ba542f5eac4762f0699251a55c65
+language: fortran
+difficulty: small
+selection_lane: stdlib
+runner_class: macos-native
+oracle_strategy: compile-and-run
+tags:
+  - stdlib
+  - string
+  - operator
+  - pre-copilot
+timeout_minutes: 15
+setup_commands:
+  - PATH="{task_dir}/../../../.venv/bin:$PATH" cmake -S . -B build
+  - PATH="{task_dir}/../../../.venv/bin:$PATH" cmake --build build
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  Found a bug in `string_type` concatenation where `lhs` and `rhs` were the
+  wrong way around. The merged fix added targeted tests and corrected the
+  operator implementation.
+
+  Expected behavior:
+  - `"a" // b` should produce `"ab"`
+  - `a // "b"` should produce `"ab"`
+  - `a // b` should produce `"ab"`
+  - concatenating with empty strings should preserve the non-empty side
+acceptance_hint: |
+  The validator compiles a small Fortran program against the built stdlib
+  archive and module files. It checks five concatenation cases involving
+  `string_type` and string literals.
+
+  The base commit is expected to fail that executable with `Check failed`.
+  The fixed commit is expected to compile and run successfully.

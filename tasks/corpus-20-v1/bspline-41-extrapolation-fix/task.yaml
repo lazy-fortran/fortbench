@@ -1,0 +1,42 @@
+id: bspline-41-extrapolation-fix
+title: "bspline-fortran: fix extrapolation for 2D+ tensor product b-splines"
+repo_url: https://github.com/jacobwilliams/bspline-fortran.git
+issue_url: https://github.com/jacobwilliams/bspline-fortran/pull/41
+source_pr_url: https://github.com/jacobwilliams/bspline-fortran/pull/41
+base_commit: 51cd45503db517077652fdf830d37ca5b2f029e5
+fixed_commit: a49663e66fd6fbf8973e132e209bbe2290b437aa
+language: fortran
+difficulty: medium
+selection_lane: bspline-fortran
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 10
+tags:
+  - bspline-fortran
+  - extrapolation
+  - numeric
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  - cmake --build build -j4
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  Extrapolation for 2D and higher-dimensional b-spline evaluation returns
+  errors instead of valid results. The `dintrv` routine sets a `mflag` status
+  variable that was being checked against the wrong name (`mflag` instead of
+  `iflag`), and the upper-bound clamp in `get_temp_x_for_extrap` did not
+  properly shift the evaluation point inside the knot span.
+
+  Expected behavior:
+  - `db2val(..., extrap=.true.)` should return an interpolated value when
+    the evaluation point is outside the knot range
+  - `iflag` should be 0 after a successful extrapolated evaluation
+acceptance_hint: |
+  The validator compiles a small Fortran program against the built bspline
+  library. It sets up a 2D b-spline, evaluates at extrapolation points
+  beyond the grid in both x and y, and checks that `iflag` is zero.
+
+  The base commit is expected to fail with a nonzero `iflag` error.
+  The fixed commit is expected to pass.

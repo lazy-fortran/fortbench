@@ -1,0 +1,61 @@
+id: test-drive-42-junit-xml
+title: "test-drive: add JUnit XML output support for test results"
+repo_url: https://github.com/fortran-lang/test-drive.git
+issue_url: https://github.com/fortran-lang/test-drive/pull/42
+source_pr_url: https://github.com/fortran-lang/test-drive/pull/42
+base_commit: 8c2b3d44e66528fa1fd400fae81bab0752ed6f87
+fixed_commit: 97b848bd4299133cf5f99c84371e4fa5445445e7
+language: fortran
+difficulty: hard
+selection_lane: test-drive
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 15
+tags:
+  - test-drive
+  - junit
+  - xml-output
+  - state-machine
+  - api-threading
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - fpm build
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  Add JUnit XML output support to the test-drive testing framework. This allows
+  CI systems and IDEs that understand JUnit XML to discover and display test
+  results from Fortran test suites.
+
+  The implementation requires:
+  - A new `junit_output` derived type that accumulates XML fragments
+  - A `junit_header` subroutine to initialize the XML document
+  - Internal `junit_push_suite` / `junit_pop_suite` / `junit_push_test`
+    subroutines for building the XML tree
+  - Threading the optional `junit` argument through `run_testsuite`,
+    `run_selected`, and `run_unittest`
+  - The `junit_output` type tracks counters: tests, failures, errors, skipped
+  - XML output is built incrementally via string concatenation in
+    `xml_start`, `xml_block`, and `xml_final` components
+  - The complete XML is obtained by concatenating those three components
+
+  Expected behavior:
+  - `junit_output` and `junit_header` are public from the `testdrive` module
+  - After calling `junit_header`, the output contains valid XML prolog
+  - After running tests with the `junit` argument, `xml_block` contains
+    `<testsuite>` and `<testcase>` elements
+  - `xml_final` contains the closing `</testsuites>` tag
+  - The full XML string is: `xml_start // xml_block // xml_final`
+acceptance_hint: |
+  The validator builds test-drive with `fpm build`, then compiles a Fortran
+  program that:
+  1. Creates a `junit_output` instance
+  2. Calls `junit_header(junit, "fortbench")`
+  3. Runs a trivial test suite with `run_testsuite(collect, unit, stat, junit=junit)`
+  4. Verifies the accumulated XML (xml_start // xml_block // xml_final) contains
+     `<?xml`, `<testsuites`, `<testsuite`, `<testcase`, `tests="1"`, `</testsuites>`
+  5. Verifies the test name appears in the XML output
+
+  The base commit fails because `junit_output` does not exist. The fixed commit
+  provides the full implementation.

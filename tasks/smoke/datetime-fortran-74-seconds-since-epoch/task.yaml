@@ -1,0 +1,40 @@
+id: datetime-fortran-74-seconds-since-epoch
+title: "datetime-fortran: extend secondsSinceEpoch past 68 years"
+repo_url: https://github.com/wavebitscientific/datetime-fortran.git
+issue_url: https://github.com/wavebitscientific/datetime-fortran/pull/74
+source_pr_url: https://github.com/wavebitscientific/datetime-fortran/pull/74
+base_commit: 95461642ba7aed4bd4103d9b3bc9f9cd88796420
+fixed_commit: 9bd51beef9c4abdf0098854387987f0ac40dc879
+language: fortran
+difficulty: small
+selection_lane: datetime-fortran
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 10
+tags:
+  - datetime-fortran
+  - epoch
+  - int64
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - cmake -S . -B build -DBUILD_TESTING=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  - cmake --build build -j4
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  `secondsSinceEpoch()` overflowed once the timestamp range moved beyond roughly
+  68 years from the Unix epoch. The merged fix promoted the returned value to
+  `int64` and added a regression test for the year 2070.
+
+  Expected behavior:
+  - `datetime(1970, 1, 1, 0, 0, 0) % secondsSinceEpoch()` stays `0`
+  - `datetime(2070, 1, 1) % secondsSinceEpoch()` returns `3155760000_int64`
+  - no floating-point exception or wraparound should occur on the 100-year case
+acceptance_hint: |
+  The validator compiles a tiny Fortran program against the built datetime
+  library and module files. It checks the Unix epoch baseline and the 100-year
+  regression case from the merged PR.
+
+  The base commit is expected to fail with an error stop on the 2070 case.
+  The fixed commit is expected to compile and run successfully.

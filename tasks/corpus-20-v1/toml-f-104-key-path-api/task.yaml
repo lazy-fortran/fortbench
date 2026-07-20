@@ -1,0 +1,70 @@
+id: toml-f-104-key-path-api
+title: "toml-f: add nested key path API for get_value and set_value"
+repo_url: https://github.com/toml-f/toml-f.git
+issue_url: https://github.com/toml-f/toml-f/pull/104
+source_pr_url: https://github.com/toml-f/toml-f/pull/104
+base_commit: c19c85473d2ea636b1d7d16662860d109b980b18
+fixed_commit: 8e66554b2401e92f295e6bca2eb8b3d0e727fc18
+language: fortran
+difficulty: hard
+selection_lane: toml-f
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 30
+tags:
+  - toml-f
+  - api-design
+  - key-path
+  - multi-file
+  - new-module
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - fpm build
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  Add a key path API to toml-f that allows accessing nested TOML values using
+  a path object instead of manually traversing tables.
+
+  Given a TOML document like:
+  ```toml
+  [server]
+  host = "localhost"
+  port = 8080
+  ```
+
+  Users should be able to write:
+  ```fortran
+  call get_value(table, toml_path("server", "host"), host_str)
+  ```
+  instead of manually getting the "server" sub-table and then "host" from it.
+
+  This requires:
+  - A new `toml_path` derived type that holds an array of `toml_key` values
+  - Constructor functions `toml_path(key1, key2)` and `toml_path(key1, key2, key3)`
+  - New `get_value` overloads that accept `toml_path` for all value types
+    (float, integer, bool, datetime, string, table, array, keyval)
+  - New `set_value` overloads that accept `toml_path`
+  - A new module `tomlf_build_path` containing the implementation
+  - Integration into `tomlf_build` module (re-export path type and overloads)
+  - Build system updates (CMakeLists.txt and/or meson.build)
+  - Registration in the top-level `tomlf` module
+
+  Expected behavior:
+  - `get_value(table, toml_path("a", "b"), val)` retrieves the value at key "b"
+    inside sub-table "a"
+  - `set_value(table, toml_path("a", "b"), val)` sets the value, creating
+    intermediate tables as needed
+  - Error codes are properly propagated through `stat` arguments
+acceptance_hint: |
+  The validator builds toml-f with `fpm build`, then compiles a Fortran program
+  that tests the key path API:
+  1. Parses a TOML string with nested tables
+  2. Uses `get_value` with `toml_path` to retrieve a nested string value
+  3. Uses `get_value` with `toml_path` to retrieve a nested integer value
+  4. Uses `set_value` with `toml_path` to create a new nested value
+  5. Verifies the set value can be read back
+
+  The base commit fails because `toml_path` and the path-based overloads do
+  not exist. The fixed commit provides the full implementation.

@@ -1,0 +1,44 @@
+id: json-fortran-479-remove-pointer-fix
+title: "json-fortran: nullify parent and previous pointers in json_value_remove"
+repo_url: https://github.com/jacobwilliams/json-fortran.git
+issue_url: https://github.com/jacobwilliams/json-fortran/pull/479
+source_pr_url: https://github.com/jacobwilliams/json-fortran/pull/479
+base_commit: 690a8bd2353fe8256448e6321d462b70e3e9daf8
+fixed_commit: 8c12e7a425bcf5096dcd11812a090d2a0123e485
+language: fortran
+difficulty: small
+selection_lane: json-fortran
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 15
+tags:
+  - json-fortran
+  - pointer-bug
+  - remove
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DSKIP_DOC_GEN=TRUE
+  - cmake --build build -j4
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  When removing an element from a JSON object using `json_value_remove`,
+  the `parent`, `previous`, and `next` pointers of the removed node are not
+  fully nullified. This causes corruption when the removed element is later
+  re-inserted elsewhere in the tree, because stale pointers from the old
+  location interfere with traversal.
+
+  Expected behavior:
+  - after `json%remove(p, .false.)`, `p%parent`, `p%previous`, and `p%next`
+    should all be nullified
+  - moving a node from one object to another via remove + add_by_path should
+    preserve the remaining siblings in the source object
+acceptance_hint: |
+  The validator compiles a small Fortran program against the built json-fortran
+  library. It creates a JSON with two objects, clones one key from object1 to
+  object2, moves another key via remove + add_by_path, then verifies all keys
+  are accessible in their expected locations.
+
+  The base commit is expected to fail because stale pointers corrupt the tree.
+  The fixed commit is expected to pass.

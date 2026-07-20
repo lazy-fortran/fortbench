@@ -1,0 +1,41 @@
+id: dop853-10-dense-output-step-size
+title: "dop853: fix step size access during dense output callback"
+repo_url: https://github.com/jacobwilliams/dop853.git
+issue_url: https://github.com/jacobwilliams/dop853/pull/10
+source_pr_url: https://github.com/jacobwilliams/dop853/pull/10
+base_commit: 27d19b396f3b20c72cbd4e452dfcad61fd7c8106
+fixed_commit: f9c45e55b80105c12248a25bfcf3b18406e5ceb4
+language: fortran
+difficulty: small
+selection_lane: dop853
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 10
+tags:
+  - dop853
+  - ode-solver
+  - dense-output
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - fpm build
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  The step size `h` was passed to the core integrator `dp86co` as a local
+  copy instead of the class member `me%h`. During dense output callbacks,
+  calling `me%info(h=hcur)` would return the initial step size rather than
+  the current one, because the local variable `h` was updated internally
+  but `me%h` was only set after the integration returned.
+
+  Expected behavior:
+  - During a dense output callback, `me%info(h=hcur)` should return a
+    nonzero step size that reflects the current integration progress
+acceptance_hint: |
+  The validator compiles a Fortran program that integrates a simple ODE
+  using dop853 with dense output enabled. Inside the `solout` callback,
+  it queries the current step size via `me%info(h=hcur)` and checks that
+  `hcur` is nonzero.
+
+  The base commit returns a stale (zero or initial) `h` value in the
+  callback. The fixed commit returns the actual current step size.

@@ -1,0 +1,16 @@
+name: smoke-custom-endpoint
+cloud_parallelism: 0
+tasks:
+  - tasks/corpus-20-v1/datetime-fortran-74-seconds-since-epoch/task.yaml
+rows:
+  - name: opencode-custom-endpoint
+    adapter: opencode
+    model: llamacpp/${FORTBENCH_SERVED_MODEL}
+    provider_class: local
+    local_lifecycle: external
+    endpoint: ${FORTBENCH_ENDPOINT}
+    local_served_model_name: ${FORTBENCH_SERVED_MODEL}
+    api_key_env: FORTBENCH_UPSTREAM_API_KEY
+    budget_tier: fixed/default
+    stage_budget_seconds: [3600, 3600, 3600]
+    run_judges: false

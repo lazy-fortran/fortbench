@@ -1,0 +1,39 @@
+id: stdlib-600-iomsg-save-npy
+title: "stdlib: fix iomsg allocation in save_npy on success"
+repo_url: https://github.com/fortran-lang/stdlib.git
+issue_url: https://github.com/fortran-lang/stdlib/pull/600
+source_pr_url: https://github.com/fortran-lang/stdlib/pull/600
+base_commit: 4069d81bb06a847ccbfd4b97ad5d36e2074bfb3e
+fixed_commit: 10f9438a165ffdcefedb46cad7b58f7f4d623549
+language: fortran
+difficulty: small
+selection_lane: stdlib
+runner_class: macos-native
+oracle_strategy: compile-and-run
+tags:
+  - stdlib
+  - npy
+  - iomsg
+  - pre-copilot
+timeout_minutes: 15
+setup_commands:
+  - PATH="{task_dir}/../../../.venv/bin:$PATH" cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  - PATH="{task_dir}/../../../.venv/bin:$PATH" cmake --build build -j4
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  `save_npy` always allocates `iomsg` even on success. When calling
+  `save_npy(filename, array, stat, msg)`, the `msg` argument is allocated
+  with an error string regardless of whether `stat` is zero.
+
+  Expected behavior:
+  - when `stat == 0`, `iomsg` should not be allocated after the call
+  - when `stat /= 0`, `iomsg` should contain the error description
+acceptance_hint: |
+  The validator compiles a small Fortran program against the built stdlib
+  archive and module files. It calls `save_npy` with a pre-allocated `msg`
+  string and checks that `msg` is deallocated (not allocated) after a
+  successful save.
+
+  The base commit is expected to fail because `msg` is wrongly allocated.
+  The fixed commit is expected to pass.

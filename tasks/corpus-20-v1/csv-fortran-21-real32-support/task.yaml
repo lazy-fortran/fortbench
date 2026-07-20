@@ -1,0 +1,41 @@
+id: csv-fortran-21-real32-support
+title: "csv-fortran: add real32 precision support for reading and writing"
+repo_url: https://github.com/jacobwilliams/fortran-csv-module.git
+issue_url: https://github.com/jacobwilliams/fortran-csv-module/pull/21
+source_pr_url: https://github.com/jacobwilliams/fortran-csv-module/pull/21
+base_commit: 02d02b1f903e204f8f67de18abb10a1f8cff97cc
+fixed_commit: 056ec1b18f189b4321f696da80d34171632f5f3a
+language: fortran
+difficulty: small
+selection_lane: csv-fortran
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 10
+tags:
+  - csv-fortran
+  - real32
+  - precision
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  - cmake --build build -j4
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  The csv_module only supports `real(wp)` (double precision) for reading and
+  writing real numbers. There is no support for `real(real32)` (single
+  precision). The fix adds `real(sp)` write and read methods so that users
+  can work with single-precision data natively.
+
+  Expected behavior:
+  - writing `real(real32)` values to a CSV file should work
+  - reading a column back as `real(real32)` via `get()` should work
+acceptance_hint: |
+  The validator compiles a small Fortran program against the built csv library.
+  It writes `real(real32)` values to a CSV file, reads the file back, and
+  retrieves a column as `real(real32)`.
+
+  The base commit is expected to fail compilation because there is no
+  `get` binding for `real(real32)` arrays. The fixed commit is expected
+  to compile and run.

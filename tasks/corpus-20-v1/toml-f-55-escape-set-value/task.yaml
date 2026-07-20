@@ -1,0 +1,41 @@
+id: toml-f-55-escape-set-value
+title: "toml-f: escape special characters in set_value build interface"
+repo_url: https://github.com/toml-f/toml-f.git
+issue_url: https://github.com/toml-f/toml-f/pull/55
+source_pr_url: https://github.com/toml-f/toml-f/pull/55
+base_commit: 071eab44697c3df932c959bf9d1165459fea55f6
+fixed_commit: 4ccf01824b58b7bcaaad2bbed3ffb7f468f9624e
+language: fortran
+difficulty: medium
+selection_lane: toml-f
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 30
+tags:
+  - toml-f
+  - string-escaping
+  - build-interface
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  - cmake --build build -j4
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  The `set_value` build interface does not escape special characters like
+  backslashes and quotes when setting string values. A string containing
+  `C:\Users\test` gets stored as raw TOML without escaping, causing the
+  backslash-t to be interpreted as a tab character on readback.
+
+  Expected behavior:
+  - `call set_value(table, 'path', 'C:\Users\test')` should round-trip
+    correctly: `get_value` returns exactly `C:\Users\test`
+  - backslashes, quotes, and other TOML special characters must be escaped
+acceptance_hint: |
+  The validator compiles a small Fortran program against the built toml-f
+  library. It calls `set_value` with a string containing backslashes, then
+  reads the value back with `get_value` and compares.
+
+  The base commit is expected to fail because the backslash-t is read as tab.
+  The fixed commit is expected to round-trip the string correctly.

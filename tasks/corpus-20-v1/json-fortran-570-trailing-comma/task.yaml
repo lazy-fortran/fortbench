@@ -1,0 +1,52 @@
+id: json-fortran-570-trailing-comma
+title: "json-fortran: add optional allow_trailing_comma flag for lenient JSON parsing"
+repo_url: https://github.com/jacobwilliams/json-fortran.git
+issue_url: https://github.com/jacobwilliams/json-fortran/pull/570
+source_pr_url: https://github.com/jacobwilliams/json-fortran/pull/570
+base_commit: ebb2812bd438cbba65cc1ac92879a559a56064f6
+fixed_commit: 84f2920df90f6abd7bb65506484abecc0c052452
+language: fortran
+difficulty: hard
+selection_lane: json-fortran
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 30
+tags:
+  - json-fortran
+  - parser
+  - trailing-comma
+  - multi-file
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - fpm build
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  JSON does not officially allow trailing commas in arrays or objects, but many
+  real-world JSON producers emit them. The library should support an optional
+  `allow_trailing_comma` flag that controls whether a single trailing comma is
+  tolerated during parsing.
+
+  This requires changes across the initialization system (include files and
+  the core module) and in both the object and array parsers.
+
+  Expected behavior:
+  - A new `allow_trailing_comma` logical member on `json_core`
+  - The initialization routines accept the new optional argument
+  - `parse_object` and `parse_array` detect dangling commas
+  - When `allow_trailing_comma` is true (default), trailing commas are silently
+    accepted
+  - When `allow_trailing_comma` is false, trailing commas raise an exception
+  - The test should register in `fpm.toml` as `jf_test_51`
+acceptance_hint: |
+  The validator builds json-fortran with `fpm build`, then compiles a Fortran
+  program that exercises the trailing-comma feature. It tests that:
+  1. Parsing `{"a":1,}` succeeds with `allow_trailing_comma=.true.`
+  2. Parsing `[1,2,3,]` succeeds with `allow_trailing_comma=.true.`
+  3. Parsing `{"a":1,}` fails with `allow_trailing_comma=.false.`
+  4. Parsing `[1,2,3,]` fails with `allow_trailing_comma=.false.`
+
+  The base commit lacks the `allow_trailing_comma` feature entirely, so the
+  validator program will fail to compile. The fixed commit provides the full
+  implementation.

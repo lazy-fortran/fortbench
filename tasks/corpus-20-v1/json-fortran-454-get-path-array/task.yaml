@@ -1,0 +1,41 @@
+id: json-fortran-454-get-path-array
+title: "json-fortran: fix json_get_path output for arrays of arrays"
+repo_url: https://github.com/jacobwilliams/json-fortran.git
+issue_url: https://github.com/jacobwilliams/json-fortran/pull/454
+source_pr_url: https://github.com/jacobwilliams/json-fortran/pull/454
+base_commit: 1805d9abfce0345b2be64ec91ff437de31fb523b
+fixed_commit: 572d9f5e39fa23995dc2a63bd11aba27dcba435e
+language: fortran
+difficulty: medium
+selection_lane: json-fortran
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 15
+tags:
+  - json-fortran
+  - path-traversal
+  - nested-array
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DSKIP_DOC_GEN=TRUE
+  - cmake --build build -j4
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  `json_get_path` produces incorrect paths for elements inside nested arrays
+  (arrays of arrays). For a JSON structure like `{ "x": [[1], [1,2,3,[4]]] }`,
+  getting the path of the deeply nested `4` should return `x[2][4][1]`, but
+  the base version returns something like `x[2].[1]`.
+
+  Expected behavior:
+  - `json_get_path` for nested array elements produces correct bracket notation
+  - `x[2][4][1]` resolves to the value `4` via `json_get`
+acceptance_hint: |
+  The validator compiles a small Fortran program against the built json-fortran
+  library. It parses `{ "x": [[1], [1,2,3,[4]]] }`, retrieves the element at
+  path `x[2][4][1]`, and also checks that `json_get_path` returns the correct
+  path string for that element.
+
+  The base commit is expected to fail with an incorrect path string.
+  The fixed commit is expected to pass.

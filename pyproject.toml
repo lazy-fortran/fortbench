@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fortbench"
+version = "0.1.0"
+description = "Real-world Fortran coding benchmark for agent CLIs"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "PyYAML>=6.0",
+  "litellm>=1.77",
+]
+
+[project.scripts]
+fortbench = "fortbench.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["fortbench*"]

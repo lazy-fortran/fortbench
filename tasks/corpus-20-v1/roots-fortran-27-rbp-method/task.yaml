@@ -1,0 +1,55 @@
+id: roots-fortran-27-rbp-method
+title: "roots-fortran: implement the RBP (Regula Falsi-Bisection-Parabolic) root-finding method"
+repo_url: https://github.com/jacobwilliams/roots-fortran.git
+issue_url: https://github.com/jacobwilliams/roots-fortran/pull/27
+source_pr_url: https://github.com/jacobwilliams/roots-fortran/pull/27
+base_commit: a114879e4b6a45e8892318a566e087779f8b4d14
+fixed_commit: 1aab5cdcfbbb72fb0023052b4c85af6e7dff57f0
+language: fortran
+difficulty: hard
+selection_lane: roots-fortran
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 15
+tags:
+  - roots-fortran
+  - numerical-method
+  - algorithm
+  - class-hierarchy
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - fpm build
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  Add the RBP (Regula Falsi-Bisection-Parabolic) root-finding method to the
+  roots-fortran library. This is a combined bracketing algorithm described in:
+
+  Alojz Suhadolnik, "Combined bracketing methods for solving nonlinear
+  equations", Applied Mathematics Letters, Volume 25, Issue 11, 2012,
+  Pages 1755-1760.
+
+  The method combines regula falsi, bisection, and parabolic interpolation
+  to achieve fast convergence while maintaining robustness.
+
+  Expected behavior:
+  - Add a `root_method_rbp` enum value (id=19) to the public method list
+  - Add an `rbp_solver` type extending `root_solver` with a `find_root => rbp`
+    procedure
+  - Register it in the `set_of_root_methods` array
+  - Add the `root_method_rbp` case in `root_scalar` allocation
+  - Implement the `rbp` subroutine with parabolic interpolation fallback to
+    bisection when the parabola step fails
+  - Update tests to exercise the new method
+acceptance_hint: |
+  The validator builds roots-fortran with `fpm build`, then compiles a Fortran
+  program that uses the RBP method to find the root of f(x) = x^3 - x - 2
+  on [1, 2] (exact root near 1.5214). It verifies that:
+  1. The `root_method_rbp` enum exists and has id 19
+  2. The `rbp_solver` class exists and can be used via `root_scalar`
+  3. The method converges to the correct root within tolerance
+  4. The method is included in `set_of_root_methods`
+
+  The base commit fails because the RBP method does not exist. The fixed
+  commit provides the full implementation.

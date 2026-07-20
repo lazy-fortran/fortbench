@@ -1,0 +1,43 @@
+id: test-drive-18-fetch-no-ctest-leak
+title: "test-drive: FetchContent should not leak upstream tests into consumer CTest"
+repo_url: https://github.com/fortran-lang/test-drive.git
+issue_url: https://github.com/fortran-lang/test-drive/pull/18
+source_pr_url: https://github.com/fortran-lang/test-drive/pull/18
+base_commit: a1ab7854175b9d90f0cac7a504db404f2ed98160
+fixed_commit: 68e22b87d9776d136c6ba69cc55fa43c59967bb6
+language: fortran
+difficulty: small
+selection_lane: test-drive
+runner_class: macos-fast
+oracle_strategy: consumer-ctest
+build_budget_seconds: 10
+tags:
+  - test-drive
+  - cmake
+  - fetchcontent
+  - ctest
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - python3 {task_dir}/validate.py {workspace} --setup-only
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  When `test-drive` is brought into another project via `FetchContent`,
+  the upstream `test-drive` test suite should not appear in the consumer
+  project's `ctest` list. The merged fix introduced a dedicated
+  `TEST_DRIVE_BUILD_TESTING` option so the FetchContent path stops leaking
+  `test-drive/all-tests`, `test-drive/check`, and `test-drive/select`
+  into downstream projects.
+
+  Expected behavior:
+  - a consumer project using `FetchContent_MakeAvailable(test-drive)` can
+    enable testing for itself without inheriting `test-drive`'s own tests
+  - the consumer's `ctest -N` output should list only the consumer test
+acceptance_hint: |
+  The validator creates a tiny consumer CMake project that pulls in the
+  checked-out `test-drive` source with `FetchContent`.
+
+  The base commit is expected to leak upstream tests into `ctest -N`.
+  The fixed commit is expected to list only the consumer's own `local-smoke`
+  test.

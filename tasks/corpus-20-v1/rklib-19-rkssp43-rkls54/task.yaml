@@ -1,0 +1,63 @@
+id: rklib-19-rkssp43-rkls54
+title: "rklib: add rkssp43 and rkls54 Runge-Kutta methods"
+repo_url: https://github.com/jacobwilliams/rklib.git
+issue_url: https://github.com/jacobwilliams/rklib/pull/19
+source_pr_url: https://github.com/jacobwilliams/rklib/pull/19
+base_commit: 81699f90a36f022cdd04ebec2f9fb5b16b570ec4
+fixed_commit: f064e80146cae125e63486d8aff2a779e0057c51
+language: fortran
+difficulty: hard
+selection_lane: rklib
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 60
+tags:
+  - rklib
+  - runge-kutta
+  - ode-solver
+  - numerical-method
+  - multi-file
+  - class-hierarchy
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - fpm build
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  Add two new Runge-Kutta methods to the rklib library:
+
+  1. **rkssp43**: 4-stage, 3rd order SSP (Strong Stability Preserving) Runge-Kutta
+     method with embedded error estimator for variable-step integration.
+     Reference: Kraaijevanger (1991), with embedded method from Conde et al. (2018).
+
+  2. **rkls54**: 5-stage, 4th order Low-Storage Runge-Kutta method for fixed-step
+     integration. Reference: Carpenter and Kennedy (1994).
+
+  Each method requires changes across multiple files:
+  - Class definitions in the appropriate `*_classes.i90` file
+  - Step procedures in `*_steps.f90`
+  - Interface declarations in `*_step_interfaces.i90`
+  - For rkssp43: order function in `*_orders.f90` and its interface
+  - Registration in `rklib_module.F90`
+  - Test updates in `test/rk_test.f90`
+
+  Expected behavior:
+  - `rkssp43_class` extends `rk_variable_step_class` with step and order procedures
+  - `rkls54_class` extends `rk_fixed_step_class` with a step procedure
+  - Both methods can be allocated, initialized, and used to integrate an ODE
+  - rkssp43 returns order 3 from its order function
+  - Both methods converge to the correct solution for a simple test ODE
+acceptance_hint: |
+  The validator builds rklib with `fpm build`, then compiles a Fortran program
+  that allocates both new solver classes and uses them to integrate a simple
+  exponential decay ODE (dy/dt = -y, y(0) = 1, exact solution y(t) = exp(-t)).
+
+  It checks that:
+  1. `rkls54_class` can be allocated and used for fixed-step integration
+  2. `rkssp43_class` can be allocated and used for variable-step integration
+  3. Both produce results within a reasonable tolerance of the exact solution
+  4. `rkssp43_order()` returns 3
+
+  The base commit fails because neither class exists. The fixed commit provides
+  both implementations.

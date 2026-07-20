@@ -1,0 +1,40 @@
+id: json-fortran-504-exported-target
+title: "json-fortran: install a complete exported CMake target for consumers"
+repo_url: https://github.com/jacobwilliams/json-fortran.git
+issue_url: https://github.com/jacobwilliams/json-fortran/pull/504
+source_pr_url: https://github.com/jacobwilliams/json-fortran/pull/504
+base_commit: cab6c11d8fed4016ee2f4c3541cefddbe9c6c56a
+fixed_commit: 99a8bd437192143ab2127f13b523393f97cf3aaa
+language: fortran
+difficulty: medium
+selection_lane: json-fortran
+runner_class: macos-fast
+oracle_strategy: cmake-consumer
+build_budget_seconds: 90
+tags:
+  - json-fortran
+  - cmake
+  - exported-target
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - "true"
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  The installed CMake package should export a complete imported target for
+  downstream consumers. Before the fix, users had to repair the target
+  themselves to add include directories and namespacing.
+
+  Expected behavior:
+  - the library configures, builds, and installs successfully
+  - the installed package exports a namespaced target
+  - a tiny Fortran consumer can `find_package(...)`, link the imported target,
+    and compile against `use json_module`
+acceptance_hint: |
+  The validator builds and installs the checked-out json-fortran tree into a
+  temporary prefix, discovers the installed package name, and configures a tiny
+  consumer project that links the exported static target and uses `json_module`.
+
+  The base commit is expected to fail because the exported target is still
+  incomplete. The fixed commit is expected to configure and build the consumer.

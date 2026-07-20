@@ -1,0 +1,15 @@
+name: smoke-llamacpp
+cloud_parallelism: 0
+tasks:
+  - tasks/corpus-20-v1/datetime-fortran-74-seconds-since-epoch/task.yaml
+rows:
+  - name: opencode-llamacpp
+    adapter: opencode
+    model: llamacpp/fortbench-model
+    provider_class: local
+    local_lifecycle: external
+    endpoint: http://127.0.0.1:8080/v1
+    local_served_model_name: fortbench-model
+    budget_tier: fixed/default
+    stage_budget_seconds: [3600, 3600, 3600]
+    run_judges: false

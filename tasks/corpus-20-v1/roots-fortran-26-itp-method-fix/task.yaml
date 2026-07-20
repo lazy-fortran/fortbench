@@ -1,0 +1,41 @@
+id: roots-fortran-26-itp-method-fix
+title: "roots-fortran: fix ITP root-finding method for f(a) > f(b) case"
+repo_url: https://github.com/jacobwilliams/roots-fortran.git
+issue_url: https://github.com/jacobwilliams/roots-fortran/pull/26
+source_pr_url: https://github.com/jacobwilliams/roots-fortran/pull/26
+base_commit: 6ee8d35618ae5edfb46d478ef69a939c419aca5e
+fixed_commit: 029c19c233633aba8eb7fab3a6c5ffea21466d81
+language: fortran
+difficulty: medium
+selection_lane: roots-fortran
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 15
+tags:
+  - roots-fortran
+  - root-finding
+  - itp-method
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - fpm build
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  The ITP (Interpolate Truncate and Project) root-finding method required
+  `f(a) < f(b)` but when `f(a) > f(b)`, it swapped the endpoints `a` and
+  `b`. This broke the invariant that `a < b` (which the caller already
+  enforces). The fix instead flips the sign of the function evaluations
+  to satisfy the `f(a) < f(b)` requirement without swapping endpoints.
+
+  Expected behavior:
+  - Finding the root of a linear function where `f(a) > 0` and `f(b) < 0`
+    should converge to the correct root
+  - The method should return `iflag = 0` (success)
+acceptance_hint: |
+  The validator compiles a Fortran program that uses the ITP method to find
+  the root of a decreasing linear function `f(x) = 1012 - (2126/157.08)*x`
+  on [0, 157.08]. The exact root is approximately 74.77.
+
+  The base commit fails because swapping endpoints violates `a < b`. The
+  fixed commit correctly handles the sign flip and finds the root.

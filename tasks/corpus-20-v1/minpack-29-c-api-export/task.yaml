@@ -1,0 +1,44 @@
+id: minpack-29-c-api-export
+title: "minpack: export the C API through an installable header and library symbols"
+repo_url: https://github.com/fortran-lang/minpack.git
+issue_url: https://github.com/fortran-lang/minpack/pull/29
+source_pr_url: https://github.com/fortran-lang/minpack/pull/29
+base_commit: 917c19823c1c399c14e49bf4dc3b33626b30da80
+fixed_commit: 9965c23bb65d273d2be11240d9b6ee7129364920
+language: fortran
+difficulty: hard
+selection_lane: minpack
+runner_class: macos-fast
+oracle_strategy: c-api-consumer
+build_budget_seconds: 45
+tags:
+  - minpack
+  - c-api
+  - headers
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - fpm build
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  The Minpack C API should be available to downstream C consumers through a
+  generated header and exported wrapper symbols. The merged change introduced
+  `include/minpack.h` plus the corresponding Fortran wrapper procedures.
+
+  Expected behavior:
+  - the source tree provides `include/minpack.h`
+  - a trivial C consumer can include that header
+  - the consumer can link against the built Minpack library while referencing
+    one of the exported C API entry points
+acceptance_hint: |
+  The validator builds the checked-out Minpack source with `fpm build`, checks
+  that the dedicated C API layer exists (`include/minpack.h`,
+  `src/minpack_capi.f90`, and `test/api` registration in `fpm.toml`), and
+  compiles a tiny C program that includes the header and references multiple
+  exported entry points such as `minpack_hybrd`, `minpack_lmdif`, and
+  `minpack_chkder`.
+
+  The base commit is expected to fail because the header and exported C API are
+  not available yet. The fixed commit is expected to provide a real C API
+  surface that compiles and links cleanly.

@@ -1,0 +1,40 @@
+id: quadpack-22-dqnc79-intent-fix
+title: "quadpack: fix err argument intent in dqnc79 from out to in"
+repo_url: https://github.com/jacobwilliams/quadpack.git
+issue_url: https://github.com/jacobwilliams/quadpack/pull/22
+source_pr_url: https://github.com/jacobwilliams/quadpack/pull/22
+base_commit: a83a344d2fda66eb7297bf8ebbafce9e4790c85f
+fixed_commit: 022f7a4eff4f6c6a40f7f8b52ba8186e2639051e
+language: fortran
+difficulty: small
+selection_lane: quadpack
+runner_class: macos-fast
+oracle_strategy: compile-and-run
+build_budget_seconds: 15
+tags:
+  - quadpack
+  - intent-bug
+  - numeric
+  - pre-copilot
+timeout_minutes: 10
+setup_commands:
+  - sed -i '' 's/\[\[ test \]\]/[[test]]/g' fpm.toml
+  - fpm build
+acceptance_commands:
+  - python3 {task_dir}/validate.py {workspace}
+issue_body: |
+  The `dqnc79` subroutine declares its `err` argument as `intent(out)` instead
+  of `intent(in)`. Since `err` is the caller-supplied error tolerance, marking
+  it as `intent(out)` causes the tolerance value to be undefined on entry,
+  leading to incorrect integration results.
+
+  Expected behavior:
+  - `dqnc79` should use the caller-supplied tolerance
+  - Integration of `sin(x)` from 0 to pi should return approximately 2.0
+acceptance_hint: |
+  The validator compiles a small Fortran program that calls `dqnc79` to
+  integrate `sin(x)` from 0 to pi with a tolerance of 1e-10. It checks
+  that the result is within 1e-6 of the exact answer (2.0).
+
+  The base commit is expected to produce an incorrect result because the
+  tolerance is undefined. The fixed commit should produce the correct result.

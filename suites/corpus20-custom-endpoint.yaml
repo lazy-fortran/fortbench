@@ -1,0 +1,35 @@
+name: corpus20-custom-endpoint
+cloud_parallelism: 0
+tasks:
+  - tasks/corpus-20-v1/datetime-fortran-74-seconds-since-epoch/task.yaml
+  - tasks/corpus-20-v1/bspline-41-extrapolation-fix/task.yaml
+  - tasks/corpus-20-v1/csv-fortran-21-real32-support/task.yaml
+  - tasks/corpus-20-v1/dop853-10-dense-output-step-size/task.yaml
+  - tasks/corpus-20-v1/json-fortran-454-get-path-array/task.yaml
+  - tasks/corpus-20-v1/json-fortran-479-remove-pointer-fix/task.yaml
+  - tasks/corpus-20-v1/json-fortran-504-exported-target/task.yaml
+  - tasks/corpus-20-v1/json-fortran-570-trailing-comma/task.yaml
+  - tasks/corpus-20-v1/minpack-29-c-api-export/task.yaml
+  - tasks/corpus-20-v1/minpack-42-meson-build/task.yaml
+  - tasks/corpus-20-v1/quadpack-22-dqnc79-intent-fix/task.yaml
+  - tasks/corpus-20-v1/rklib-19-rkssp43-rkls54/task.yaml
+  - tasks/corpus-20-v1/roots-fortran-26-itp-method-fix/task.yaml
+  - tasks/corpus-20-v1/roots-fortran-27-rbp-method/task.yaml
+  - tasks/corpus-20-v1/stdlib-543-string-concat/task.yaml
+  - tasks/corpus-20-v1/stdlib-600-iomsg-save-npy/task.yaml
+  - tasks/corpus-20-v1/test-drive-18-fetch-no-ctest-leak/task.yaml
+  - tasks/corpus-20-v1/test-drive-42-junit-xml/task.yaml
+  - tasks/corpus-20-v1/toml-f-104-key-path-api/task.yaml
+  - tasks/corpus-20-v1/toml-f-55-escape-set-value/task.yaml
+rows:
+  - name: opencode-custom-endpoint
+    adapter: opencode
+    model: llamacpp/${FORTBENCH_SERVED_MODEL}
+    provider_class: local
+    local_lifecycle: external
+    endpoint: ${FORTBENCH_ENDPOINT}
+    local_served_model_name: ${FORTBENCH_SERVED_MODEL}
+    api_key_env: FORTBENCH_UPSTREAM_API_KEY
+    budget_tier: fixed/default
+    stage_budget_seconds: [3600, 3600, 3600]
+    run_judges: false
