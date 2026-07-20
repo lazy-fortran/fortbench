@@ -85,12 +85,17 @@ class AdapterConfigTests(unittest.TestCase):
             root = Path(tmp)
             workspace = root / "workspace"
             workspace.mkdir()
-            env = _write_codex_cloud_config(
-                root / ".codex-cloud",
-                workspace,
-                {"model": "gpt-5.4-mini", "provider_class": "cloud"},
-                home_dir=root / ".codex-home",
-            )
+            source_home = root / "source-home"
+            source_auth = source_home / ".codex" / "auth.json"
+            source_auth.parent.mkdir(parents=True)
+            source_auth.write_text('{"token": "test-only"}\n')
+            with patch("fortbench.adapters.Path.home", return_value=source_home):
+                env = _write_codex_cloud_config(
+                    root / ".codex-cloud",
+                    workspace,
+                    {"model": "gpt-5.4-mini", "provider_class": "cloud"},
+                    home_dir=root / ".codex-home",
+                )
 
             config_path = Path(env["CODEX_CONFIG_PATH"])
             config_text = config_path.read_text()
@@ -104,7 +109,9 @@ class AdapterConfigTests(unittest.TestCase):
             self.assertIn('web_search = "disabled"', config_text)
             self.assertNotIn("model_reasoning_effort", config_text)
             self.assertEqual(Path(env["HOME"]), root / ".codex-home")
-            self.assertTrue((config_path.parent / "auth.json").exists())
+            copied_auth = config_path.parent / "auth.json"
+            self.assertEqual(copied_auth.read_text(), source_auth.read_text())
+            self.assertEqual(copied_auth.stat().st_mode & 0o777, 0o600)
 
     def test_local_sampling_options_follow_model_family(self) -> None:
         self.assertEqual(
