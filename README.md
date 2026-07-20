@@ -94,7 +94,8 @@ Do not commit a run directory.
 Public Fortbench records contain only model and weight identity, inference
 settings, model output, and deterministic evaluation. They exclude hardware,
 hostnames, RAM, paths, timing, throughput, cost, raw logs, and environment
-dumps. See [Publishing results](docs/publishing.md).
+dumps. Create one with `fortbench export-public`; see
+[Publishing results](docs/publishing.md).
 
 ## Development
 
