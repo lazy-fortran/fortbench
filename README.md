@@ -78,14 +78,16 @@ The published suites score 19 valid tasks. The
 excluded because its acceptance command passes on both pinned commits.
 
 Models are ordered by quality first and speed second. Speed is average minutes
-per scored task. The current Qwen row and the adjusted Cloud/M3 Ultra rows use
-the 19-task denominator; the four archived scluster 20/20 rows are also shown
-as 19/19 because the excluded task was among their solved tasks.
+per scored task. The current Qwen and DeepSeek rows and the adjusted Cloud/M3
+Ultra rows use the 19-task denominator; the four archived scluster 20/20 rows
+are also shown as 19/19 because the excluded task was among their solved
+tasks.
 
 | Model | Quality | Speed | Hardware | Status |
 |---|---:|---:|---|---|
 | Qwen 3.6 27B Q4 (scluster) | 19/19 (100%) | 10.6 min/task | 2x AMD EPYC 9455, RTX PRO 6000 Blackwell Max-Q 96 GB | archived |
 | Qwen 3.5 122B A10B UD-Q4 (scluster) | 19/19 (100%) | 11.3 min/task | 2x AMD EPYC 9455, RTX PRO 6000 Blackwell Max-Q 96 GB | archived |
+| DeepSeek V4 Flash via custom endpoint | 19/19 (100%) | 14.3 min/task | Private endpoint, hardware unavailable | complete |
 | Qwen3.8-27B via OpenCode/llama.cpp | 19/19 (100%) | 15.4 min/task | 2x NVIDIA RTX 5060 Ti, 16 GB each | complete |
 | Mistral Medium 3.5 UD-Q4 (scluster) | 19/19 (100%) | 30.4 min/task | 2x AMD EPYC 9455, RTX PRO 6000 Blackwell Max-Q 96 GB | archived |
 | Kimi K2.6 Q4X 32K (scluster) | 19/19 (100%) | 99.3 min/task | 2x AMD EPYC 9455, RTX PRO 6000 Blackwell Max-Q 96 GB | archived |

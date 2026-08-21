@@ -119,6 +119,29 @@ class LocalRuntimeTests(unittest.TestCase):
         mock_urlopen.assert_called_once_with("http://127.0.0.1:8080/v1/models", timeout=5)
 
     @patch("fortbench.core.urllib.request.urlopen")
+    @patch.dict(os.environ, {"FORTBENCH_UPSTREAM_API_KEY": "test-key"}, clear=False)
+    def test_assert_local_server_model_authenticates_custom_endpoint(self, mock_urlopen: MagicMock) -> None:
+        mock_response = MagicMock()
+        mock_response.read.return_value = b'{"data":[{"id":"deepseek-v4-flash"}]}'
+        mock_urlopen.return_value.__enter__.return_value = mock_response
+
+        assert_local_server_model(
+            {
+                "name": "opencode-custom-endpoint",
+                "adapter": "opencode",
+                "model": "llamacpp/${FORTBENCH_SERVED_MODEL}",
+                "endpoint": "http://10.77.0.20:8090/v1",
+                "local_served_model_name": "deepseek-v4-flash",
+                "api_key_env": "FORTBENCH_UPSTREAM_API_KEY",
+            }
+        )
+
+        request = mock_urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, "http://10.77.0.20:8090/v1/models")
+        self.assertEqual(request.get_header("Authorization"), "Bearer test-key")
+        self.assertEqual(mock_urlopen.call_args.kwargs["timeout"], 5)
+
+    @patch("fortbench.core.urllib.request.urlopen")
     def test_assert_local_server_model_raises_on_mismatch(self, mock_urlopen: MagicMock) -> None:
         mock_response = MagicMock()
         mock_response.read.return_value = b'{"data":[{"id":"wrong-model"}]}'

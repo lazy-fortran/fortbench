@@ -1012,7 +1012,19 @@ def local_models_url(row: dict) -> str:
 
 def assert_local_server_model(row: dict) -> None:
     expected = local_served_model_name(row)
-    with urllib.request.urlopen(local_models_url(row), timeout=5) as response:
+    models_url = local_models_url(row)
+    api_key_env = str(row.get("api_key_env") or "").strip()
+    if api_key_env:
+        api_key = os.environ.get(api_key_env, "").strip()
+        if not api_key:
+            raise RuntimeError(f"upstream API key environment variable is unset: {api_key_env}")
+        request = urllib.request.Request(
+            models_url,
+            headers={"Authorization": f"Bearer {api_key}"},
+        )
+    else:
+        request = models_url
+    with urllib.request.urlopen(request, timeout=5) as response:
         payload = json.loads(response.read().decode("utf-8"))
     model_ids = [item.get("id", "") for item in payload.get("data", [])]
     if expected not in model_ids:
