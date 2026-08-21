@@ -274,6 +274,47 @@ class LocalRuntimeTests(unittest.TestCase):
         self.assertEqual(result["final_status"], "error")
         self.assertEqual(result["local_backend"], "llamacpp")
 
+    def test_write_suite_artifacts_excludes_invalid_tasks_from_reports(self) -> None:
+        suite = {
+            "name": "suite",
+            "tasks": ["task-one.yaml", "task-two.yaml"],
+            "excluded_tasks": {"task-two": "invalid oracle"},
+        }
+        rows = [
+            {
+                "task_id": "task-one",
+                "row_name": "model-a",
+                "budget_tier": "fixed/default",
+                "final_status": "solved",
+                "solved_stage": 1,
+                "runtime_seconds_total": 1.0,
+            },
+            {
+                "task_id": "task-two",
+                "row_name": "model-a",
+                "budget_tier": "fixed/default",
+                "final_status": "error",
+                "solved_stage": None,
+                "runtime_seconds_total": 2.0,
+            },
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp)
+            write_suite_artifacts(output_dir, suite, rows)
+
+            report_rows = json.loads((output_dir / "results.json").read_text())
+            csv_text = (output_dir / "summary.csv").read_text()
+            markdown_text = (output_dir / "summary.md").read_text()
+
+        self.assertEqual(len(report_rows), 2)
+        self.assertTrue(report_rows[1]["excluded_from_score"])
+        self.assertEqual(report_rows[1]["exclusion_reason"], "invalid oracle")
+        self.assertIn("task-one", csv_text)
+        self.assertNotIn("task-two", csv_text)
+        self.assertIn("Scored tasks: `1`", markdown_text)
+        self.assertIn("Excluded from scoring: `task-two`: invalid oracle", markdown_text)
+
     @patch("fortbench.core.run_acceptance")
     @patch("fortbench.core.run_setup")
     @patch("fortbench.core.clone_workspace")

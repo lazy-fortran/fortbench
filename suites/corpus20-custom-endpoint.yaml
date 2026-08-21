@@ -1,5 +1,7 @@
 name: corpus20-custom-endpoint
 cloud_parallelism: 0
+excluded_tasks:
+  roots-fortran-26-itp-method-fix: "The acceptance command passes on the pinned base commit and cannot distinguish the fixed commit."
 tasks:
   - tasks/corpus-20-v1/datetime-fortran-74-seconds-since-epoch/task.yaml
   - tasks/corpus-20-v1/bspline-41-extrapolation-fix/task.yaml

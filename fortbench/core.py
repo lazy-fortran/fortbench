@@ -22,6 +22,7 @@ import yaml
 from fortbench.adapters import AgentResponse, build_adapter, _local_benchmark_user
 from fortbench.judges import run_claude_judge, run_codex_judge
 from fortbench.litellm_proxy import prepare_proxy_root, proxy_root, start_proxy, stop_proxy
+from fortbench.suite_config import excluded_task_ids, excluded_task_reasons
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEVSTRAL_SCRIPTS = Path(os.environ.get("FORTBENCH_SCRIPTS_DIR", ""))
@@ -626,6 +627,14 @@ def write_markdown_summary(
         f"- Generated: `{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}`",
         "",
     ]
+    excluded = excluded_task_reasons(suite)
+    if excluded:
+        scored_count = len(suite["tasks"]) - len(excluded)
+        lines.extend([f"- Scored tasks: `{scored_count}`", ""])
+        for task_id, reason in excluded.items():
+            detail = f": {reason}" if reason else ""
+            lines.append(f"- Excluded from scoring: `{task_id}`{detail}")
+        lines.append("")
     if system_config is not None:
         lines.extend(_system_summary_lines(system_config))
     lines.extend(
@@ -680,9 +689,20 @@ def write_suite_artifacts(output_dir: Path, suite: dict, run_rows: list[dict]) -
     system_config = collect_system_config(suite)
     if system_config is not None:
         write_json(output_dir / SYSTEM_CONFIG_FILENAME, system_config)
-    write_json(output_dir / "results.json", run_rows)
-    write_markdown_summary(output_dir / "summary.md", suite, run_rows, system_config)
-    write_csv_summary(output_dir / "summary.csv", run_rows)
+    excluded_reasons = excluded_task_reasons(suite)
+    stored_rows = []
+    for row in run_rows:
+        if row.get("task_id") not in excluded_reasons:
+            stored_rows.append(row)
+            continue
+        annotated = dict(row)
+        annotated["excluded_from_score"] = True
+        annotated["exclusion_reason"] = excluded_reasons[row["task_id"]]
+        stored_rows.append(annotated)
+    write_json(output_dir / "results.json", stored_rows)
+    scored_rows = [row for row in stored_rows if not row.get("excluded_from_score")]
+    write_markdown_summary(output_dir / "summary.md", suite, scored_rows, system_config)
+    write_csv_summary(output_dir / "summary.csv", scored_rows)
 
 
 def _archive_rel_parts(path: Path, run_dir: Path) -> tuple[str, ...]:
@@ -933,6 +953,10 @@ def load_suite(path: Path) -> tuple[dict, list[dict]]:
         task = load_yaml(full)
         task["_task_dir"] = str(full.parent)
         task_defs.append(task)
+    excluded = excluded_task_ids(suite)
+    unknown = excluded - {task["id"] for task in task_defs}
+    if unknown:
+        raise ValueError(f"suite excludes unknown task IDs: {sorted(unknown)}")
     return suite, task_defs
 
 
@@ -1107,6 +1131,7 @@ def collect_completed_futures(
 
 def run_suite(suite_path: Path, output_dir: Path, continue_on_error: bool, resume: bool = False) -> int:
     suite, tasks = load_suite(suite_path)
+    tasks = [task for task in tasks if task["id"] not in excluded_task_ids(suite)]
     output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     previous_proxy_root = os.environ.get("FORTBENCH_LITELLM_PROXY_ROOT")

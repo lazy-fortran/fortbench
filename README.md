@@ -71,6 +71,20 @@ Credentials are read from the environment and must never be added to a suite
 file. See [Running the suite](docs/running.md) for lifecycle, adapter, and
 troubleshooting details.
 
+## Latest scored results
+
+The published suites score 19 valid tasks. The
+`roots-fortran-26-itp-method-fix` task remains in the frozen inventory but is
+excluded because its acceptance command passes on both pinned commits.
+
+Models are ordered by quality first and speed second. Only one completed
+full-suite model run is currently available in this checkout; private timing
+data is intentionally not published.
+
+| Model | Quality | Speed | Status |
+|---|---:|---|---|
+| Qwen3.8-27B via OpenCode/llama.cpp | 19/19 (100%) | Private | complete |
+
 ## Verify the corpus itself
 
 Every task pins a failing base commit and a fixed commit. This command confirms

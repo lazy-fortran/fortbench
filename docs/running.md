@@ -23,8 +23,10 @@ so Fortbench never stops a server it did not start.
 ## Custom endpoints
 
 Set `FORTBENCH_ENDPOINT` to the API root ending in `/v1` and
-`FORTBENCH_SERVED_MODEL` to an identifier returned by `/v1/models`. If the
-endpoint requires a bearer token, set `FORTBENCH_UPSTREAM_API_KEY`.
+`FORTBENCH_SERVED_MODEL` to an identifier returned by `/v1/models`. Set
+`FORTBENCH_UPSTREAM_API_KEY` to the bearer token the endpoint expects. The
+proxy rejects an empty credential, so a keyless local server still needs a
+placeholder value such as `dummy`.
 
 Suite files contain environment-variable references, not credentials. Missing
 variables fail before the first task.

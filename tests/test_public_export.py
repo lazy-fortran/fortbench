@@ -66,6 +66,24 @@ class PublicExportTest(unittest.TestCase):
             self.assertEqual(data["metadata"], {"engine": "llama.cpp"})
             self.assertEqual(data["results"][0]["task_id"], "one")
 
+    def test_preserves_scoring_exclusion_without_private_fields(self) -> None:
+        public = build_public_export(
+            [
+                {
+                    "task_id": "invalid-task",
+                    "excluded_from_score": True,
+                    "exclusion_reason": "Base acceptance passed on /home/private/workspace",
+                    "runtime_seconds_total": 2.0,
+                }
+            ]
+        )
+
+        self.assertTrue(public["results"][0]["excluded_from_score"])
+        self.assertEqual(
+            public["results"][0]["exclusion_reason"],
+            "Base acceptance passed on [redacted-path]",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

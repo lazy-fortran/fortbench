@@ -40,7 +40,7 @@ def _public_stage(stage: dict[str, Any]) -> dict[str, Any]:
 
 
 def _public_result(row: dict[str, Any]) -> dict[str, Any]:
-    return {
+    result = {
         "task_id": row.get("task_id"),
         "task_title": row.get("task_title"),
         "row_name": row.get("row_name"),
@@ -51,6 +51,10 @@ def _public_result(row: dict[str, Any]) -> dict[str, Any]:
         "solved_stage": row.get("solved_stage"),
         "stages": [_public_stage(stage) for stage in row.get("stage_results", [])],
     }
+    if row.get("excluded_from_score"):
+        result["excluded_from_score"] = True
+        result["exclusion_reason"] = _redact_text(str(row.get("exclusion_reason") or ""))
+    return result
 
 
 def build_public_export(

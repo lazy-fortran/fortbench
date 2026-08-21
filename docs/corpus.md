@@ -32,5 +32,10 @@ Base commits are frozen; PR sources predate Copilot exposure on the
 respective repositories so the corpus is not contaminated by training
 data leakage from the answer set.
 
+`roots-fortran-26-itp-method-fix` is retained in the frozen `corpus-20-v1`
+inventory for provenance, but is excluded from scored comparisons because its
+acceptance command passes on both the pinned base and fixed commits. The
+published suites therefore score the remaining 19 tasks.
+
 The legacy 10-task pilot remains frozen under `tasks/pilot/` for
 historical reference.

@@ -105,6 +105,75 @@ class ProgressSummaryTest(unittest.TestCase):
         self.assertIn("| `model-a` | `2/4` | 1/2 (50.0%) | avg 0:01:30, total 0:03:00 | active |", text)
         self.assertIn("- `model-a`: `task-three`", text)
 
+    def test_build_progress_rows_excludes_invalid_tasks_from_score(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            tasks_dir = root / "tasks" / "corpus-20-v1"
+            suites_dir = root / "suites"
+            output_dir = root / "run"
+            output_dir.mkdir()
+            (output_dir / "artifacts").mkdir()
+            suites_dir.mkdir()
+
+            for task_id in ["task-one", "task-two"]:
+                task_dir = tasks_dir / task_id
+                task_dir.mkdir(parents=True)
+                (task_dir / "task.yaml").write_text(f"id: {task_id}\n")
+
+            suite_path = suites_dir / "suite.yaml"
+            suite_path.write_text(
+                "\n".join(
+                    [
+                        "tasks:",
+                        "  - tasks/corpus-20-v1/task-one/task.yaml",
+                        "  - tasks/corpus-20-v1/task-two/task.yaml",
+                        "excluded_tasks:",
+                        "  task-two: invalid oracle",
+                        "rows:",
+                        "  - {name: model-a}",
+                    ]
+                )
+                + "\n"
+            )
+            (output_dir / "results.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "task_id": "task-one",
+                            "row_name": "model-a",
+                            "final_status": "solved",
+                            "runtime_seconds_total": 12.0,
+                        },
+                        {
+                            "task_id": "task-two",
+                            "row_name": "model-a",
+                            "final_status": "error",
+                            "runtime_seconds_total": 2.0,
+                        },
+                    ]
+                )
+                + "\n"
+            )
+
+            summary_rows, active = build_progress_rows(suite_path, output_dir)
+
+            self.assertEqual(
+                summary_rows,
+                [
+                    {
+                        "row_name": "model-a",
+                        "done": 1,
+                        "total": 1,
+                        "solved": 1,
+                        "solve_rate_pct": 100.0,
+                        "avg_runtime_seconds": 12.0,
+                        "total_runtime_seconds": 12.0,
+                        "status": "done",
+                    }
+                ],
+            )
+            self.assertEqual(active, {})
+
     def test_build_progress_rows_multi_merges_multiple_runs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

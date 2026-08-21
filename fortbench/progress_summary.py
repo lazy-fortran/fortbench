@@ -6,6 +6,8 @@ from pathlib import Path
 
 import yaml
 
+from fortbench.suite_config import excluded_task_ids
+
 
 def load_results(path: Path) -> list[dict]:
     data = json.loads(path.read_text())
@@ -16,11 +18,15 @@ def load_results(path: Path) -> list[dict]:
     raise TypeError(f"unsupported results format in {path}")
 
 
-def load_suite(path: Path) -> tuple[list[str], list[dict]]:
+def load_suite(path: Path) -> tuple[list[str], list[dict], set[str]]:
     suite = yaml.safe_load(path.read_text())
     repo_root = path.parent.parent
     task_ids = [yaml.safe_load((repo_root / task_path).read_text())["id"] for task_path in suite["tasks"]]
-    return task_ids, suite["rows"]
+    excluded = excluded_task_ids(suite)
+    unknown = excluded - set(task_ids)
+    if unknown:
+        raise ValueError(f"suite excludes unknown task IDs: {sorted(unknown)}")
+    return task_ids, suite["rows"], excluded
 
 
 def format_duration(total_seconds: float | int | None) -> str:
@@ -52,8 +58,10 @@ def active_tasks_by_row(output_dir: Path, completed_keys: set[tuple[str, str]]) 
 
 
 def build_progress_rows(suite_path: Path, output_dir: Path) -> tuple[list[dict], dict[str, list[str]]]:
-    task_ids, suite_rows = load_suite(suite_path)
-    total_tasks = len(task_ids)
+    task_ids, suite_rows, excluded = load_suite(suite_path)
+    scored_task_ids = [task_id for task_id in task_ids if task_id not in excluded]
+    scored_task_id_set = set(scored_task_ids)
+    total_tasks = len(scored_task_ids)
     results_path = output_dir / "results.json"
     results = load_results(results_path) if results_path.exists() else []
     rows_by_name: dict[str, list[dict]] = defaultdict(list)
@@ -61,9 +69,9 @@ def build_progress_rows(suite_path: Path, output_dir: Path) -> tuple[list[dict],
     for row in results:
         row_name = row.get("row_name")
         task_id = row.get("task_id")
-        if row_name is not None:
+        if row_name is not None and task_id in scored_task_id_set:
             rows_by_name[row_name].append(row)
-        if row_name is not None and task_id is not None:
+        if row_name is not None and task_id in scored_task_id_set:
             completed_keys.add((task_id, row_name))
     artifact_active = active_tasks_by_row(output_dir, completed_keys)
     local_active_row: str | None = None
@@ -77,7 +85,7 @@ def build_progress_rows(suite_path: Path, output_dir: Path) -> tuple[list[dict],
             break
     if local_active_row is not None:
         completed_tasks = {task_id for task_id, row_name in completed_keys if row_name == local_active_row}
-        next_task = next((task_id for task_id in task_ids if task_id not in completed_tasks), None)
+        next_task = next((task_id for task_id in scored_task_ids if task_id not in completed_tasks), None)
         if next_task is not None:
             active[local_active_row] = [next_task]
     for row in suite_rows:

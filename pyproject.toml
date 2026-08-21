@@ -10,7 +10,10 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "PyYAML>=6.0",
-  "litellm>=1.77",
+  "litellm[proxy]>=1.77",
+  # litellm's proxy server imports fastapi.dependencies.utils.get_flat_dependant,
+  # which fastapi removed in 0.136.
+  "fastapi<0.136",
 ]
 
 [project.scripts]
